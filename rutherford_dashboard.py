@@ -41,7 +41,7 @@ st.title("🎓 Welcome to Rutherford Scholarship Checker")
 st.subheader("📋 List of Students")
 st.write(", ".join(sorted(df["StudentName"].unique())))
 
-st.info("To use scholarship checker, start below:")
+st.info("To use scholarship checker, start by selecting students on the left hand pane")
 
 # Sidebar filters
 st.sidebar.title("Filters")
