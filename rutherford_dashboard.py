@@ -41,7 +41,7 @@ st.title("🎓 Welcome to Rutherford Scholarship Checker")
 st.subheader("📋 List of Students")
 st.write(", ".join(sorted(df["StudentName"].unique())))
 
-st.info("To use scholarship checker, start by using the filter pane on the left")
+st.info("To use scholarship checker, use filter on the left pane:")
 
 # Sidebar filters
 st.sidebar.title("Filters")
@@ -60,9 +60,9 @@ st.session_state["filter_mode"] = filter_mode
 filtered_df = pd.DataFrame()
 
 if filter_mode == "Grade Level":
-    grade_levels = sorted(df["GradeLevel"].unique())
+    grade_levels = ["Select a grade..."] + sorted(df["GradeLevel"].unique())
     selected_grade = None if clear else st.sidebar.selectbox("Choose Grade:", grade_levels)
-    if selected_grade:
+    if selected_grade and selected_grade != "Select a grade...":
         filtered_df = df[df["GradeLevel"] == selected_grade]
 
 elif filter_mode == "Select Names":
