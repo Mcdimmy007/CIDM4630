@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import sqlite3
+import matplotlib.pyplot as plt
 
 # Connect to the database
 conn = sqlite3.connect("scholarship.db")
@@ -41,7 +42,7 @@ st.title("🎓 Welcome to Rutherford Scholarship Checker")
 st.subheader("📋 List of Students")
 st.write(", ".join(sorted(df["StudentName"].unique())))
 
-st.info("To use scholarship checker, start by selecting students on the left hand pane")
+st.info("To use scholarship checker, start below:")
 
 # Sidebar filters
 st.sidebar.title("Filters")
@@ -59,6 +60,7 @@ st.session_state["filter_mode"] = filter_mode
 # Filtered dataframe logic
 filtered_df = pd.DataFrame()
 export_data = []
+chart_data = []
 
 if filter_mode == "Grade Level":
     grade_levels = ["Select a grade..."] + sorted(df["GradeLevel"].unique())
@@ -90,7 +92,6 @@ if not filtered_df.empty:
                 result = calculate_custom_award(selected_scores)
                 st.success(result)
 
-                # Extract average and result string
                 avg_value = result.split("Average: ")[-1] if "Average:" in result else "-"
                 export_data.append({
                     "Student Name": row["StudentName"],
@@ -98,6 +99,7 @@ if not filtered_df.empty:
                     "Average": avg_value,
                     "Scholarship Result": result
                 })
+                chart_data.append(result.split(" - ")[0])
             else:
                 st.info("Please select at least 5 courses to evaluate eligibility.")
 
@@ -110,5 +112,14 @@ if not filtered_df.empty:
             export_df.to_excel(filename, index=False)
             with open(filename, "rb") as f:
                 st.download_button(label="📥 Download Results", data=f, file_name=filename, mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
+        if chart_data:
+            st.markdown("---")
+            st.subheader("📊 Scholarship Result Breakdown")
+            pie_df = pd.Series(chart_data).value_counts()
+            fig, ax = plt.subplots()
+            ax.pie(pie_df, labels=pie_df.index, autopct='%1.1f%%', startangle=90, counterclock=False)
+            ax.axis('equal')
+            st.pyplot(fig)
 
 conn.close()
