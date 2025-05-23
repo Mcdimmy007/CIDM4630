@@ -41,7 +41,7 @@ st.title("🎓 Welcome to Rutherford Scholarship Checker")
 st.subheader("📋 List of Students")
 st.write(", ".join(sorted(df["StudentName"].unique())))
 
-st.info("To use scholarship checker, use filter on the left pane:")
+st.info("To use scholarship checker, start below:")
 
 # Sidebar filters
 st.sidebar.title("Filters")
@@ -58,6 +58,7 @@ st.session_state["filter_mode"] = filter_mode
 
 # Filtered dataframe logic
 filtered_df = pd.DataFrame()
+export_data = []
 
 if filter_mode == "Grade Level":
     grade_levels = ["Select a grade..."] + sorted(df["GradeLevel"].unique())
@@ -74,6 +75,7 @@ elif filter_mode == "Select Names":
     elif selected_names:
         filtered_df = df[df["StudentName"].isin(selected_names)]
 
+# Display results and export option
 if not filtered_df.empty:
     for _, row in filtered_df.iterrows():
         st.markdown(f"### 🎯 {row['StudentName']} ({row['GradeLevel']})")
@@ -87,7 +89,26 @@ if not filtered_df.empty:
                 selected_scores = {course: student_courses[course] for course in selected_courses}
                 result = calculate_custom_award(selected_scores)
                 st.success(result)
+
+                # Extract average and result string
+                avg_value = result.split("Average: ")[-1] if "Average:" in result else "-"
+                export_data.append({
+                    "Student Name": row["StudentName"],
+                    "Grade Level": row["GradeLevel"],
+                    "Average": avg_value,
+                    "Scholarship Result": result
+                })
             else:
                 st.info("Please select at least 5 courses to evaluate eligibility.")
+
+    # Export section
+    if export_data:
+        st.markdown("---")
+        if st.checkbox("✅ Export eligibility results as Excel"):
+            export_df = pd.DataFrame(export_data)
+            filename = "rutherford_eligibility_results.xlsx"
+            export_df.to_excel(filename, index=False)
+            with open(filename, "rb") as f:
+                st.download_button(label="📥 Download Results", data=f, file_name=filename, mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
 conn.close()
