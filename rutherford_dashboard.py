@@ -41,27 +41,25 @@ st.title("🎓 Welcome to Rutherford Scholarship Checker")
 st.subheader("📋 List of Students")
 st.write(", ".join(sorted(df["StudentName"].unique())))
 
-st.info("To use scholarship checker, please use the filter on the left pane:")
+st.info("To use scholarship checker, start below:")
 
 # Sidebar filters
 st.sidebar.title("Filters")
 clear = st.sidebar.button("Clear Filter Selections")
 
 # Initialize filter values
-filter_mode_default = "All" if clear else st.session_state.get("filter_mode", "All")
+filter_mode_default = "Grade Level" if clear else st.session_state.get("filter_mode", "Grade Level")
 selected_grade = None
 selected_names = []
 
 # Select filter mode
-filter_mode = st.sidebar.radio("Filter by:", ["All", "Grade Level", "Select Names"], index=["All", "Grade Level", "Select Names"].index(filter_mode_default))
+filter_mode = st.sidebar.radio("Filter by:", ["Grade Level", "Select Names"], index=["Grade Level", "Select Names"].index(filter_mode_default))
 st.session_state["filter_mode"] = filter_mode
 
 # Filtered dataframe logic
 filtered_df = pd.DataFrame()
-if filter_mode == "All" and not clear:
-    filtered_df = df.copy()
 
-elif filter_mode == "Grade Level":
+if filter_mode == "Grade Level":
     grade_levels = sorted(df["GradeLevel"].unique())
     selected_grade = None if clear else st.sidebar.selectbox("Choose Grade:", grade_levels)
     if selected_grade:
@@ -69,8 +67,11 @@ elif filter_mode == "Grade Level":
 
 elif filter_mode == "Select Names":
     name_options = sorted(df["StudentName"].unique())
+    name_options.insert(0, "All")
     selected_names = [] if clear else st.sidebar.multiselect("Select Student(s):", name_options)
-    if selected_names:
+    if "All" in selected_names:
+        filtered_df = df.copy()
+    elif selected_names:
         filtered_df = df[df["StudentName"].isin(selected_names)]
 
 if not filtered_df.empty:
