@@ -45,25 +45,33 @@ st.info("To use scholarship checker, start below:")
 
 # Sidebar filters
 st.sidebar.title("Filters")
-clear = st.sidebar.button("Clear Filters")
+clear = st.sidebar.button("Clear Filter Selections")
 
-if clear:
-    st.stop()
+# Initialize filter values
+filter_mode_default = "All" if clear else st.session_state.get("filter_mode", "All")
+selected_grade = None
+selected_names = []
 
-filter_mode = st.sidebar.radio("Filter by:", ["All", "Grade Level", "Select Names"])
+# Select filter mode
+filter_mode = st.sidebar.radio("Filter by:", ["All", "Grade Level", "Select Names"], index=["All", "Grade Level", "Select Names"].index(filter_mode_default))
+st.session_state["filter_mode"] = filter_mode
 
+# Filtered dataframe logic
 filtered_df = pd.DataFrame()
-if filter_mode == "All":
+if filter_mode == "All" and not clear:
     filtered_df = df.copy()
 
 elif filter_mode == "Grade Level":
-    grade_choice = st.sidebar.selectbox("Choose Grade:", sorted(df["GradeLevel"].unique()))
-    filtered_df = df[df["GradeLevel"] == grade_choice]
+    grade_levels = sorted(df["GradeLevel"].unique())
+    selected_grade = None if clear else st.sidebar.selectbox("Choose Grade:", grade_levels)
+    if selected_grade:
+        filtered_df = df[df["GradeLevel"] == selected_grade]
 
 elif filter_mode == "Select Names":
-    names_selected = st.sidebar.multiselect("Select Student(s):", sorted(df["StudentName"].unique()))
-    if names_selected:
-        filtered_df = df[df["StudentName"].isin(names_selected)]
+    name_options = sorted(df["StudentName"].unique())
+    selected_names = [] if clear else st.sidebar.multiselect("Select Student(s):", name_options)
+    if selected_names:
+        filtered_df = df[df["StudentName"].isin(selected_names)]
 
 if not filtered_df.empty:
     for _, row in filtered_df.iterrows():
@@ -73,7 +81,7 @@ if not filtered_df.empty:
         with st.expander("View Courses and Grades"):
             st.write(pd.DataFrame.from_dict(student_courses, orient="index", columns=["Grade"]))
 
-            selected_courses = st.multiselect("Select 5 or more courses to test eligibility:", list(student_courses.keys()))
+            selected_courses = st.multiselect(f"Select 5 or more courses for {row['StudentName']}:", list(student_courses.keys()), key=row['StudentName'])
             if len(selected_courses) >= 5:
                 selected_scores = {course: student_courses[course] for course in selected_courses}
                 result = calculate_custom_award(selected_scores)
