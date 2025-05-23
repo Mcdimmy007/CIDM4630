@@ -1,9 +1,9 @@
-import sqlite3
-import pandas as pd
 import streamlit as st
+import pandas as pd
+import sqlite3
 import matplotlib.pyplot as plt
 
-# Connect to database
+# Connect to the database
 conn = sqlite3.connect("scholarship.db")
 df = pd.read_sql("SELECT * FROM StudentGrades", conn)
 
@@ -46,24 +46,38 @@ def calculate_award(row):
 # Apply logic
 df["Scholarship Result"] = df.apply(calculate_award, axis=1)
 
+# Title
+st.title("🎓 Welcome to Rutherford Scholarship Checker")
+
+# Display student names only
+st.subheader("📋 List of Students")
+st.write(", ".join(sorted(df["StudentName"].unique())))
+
 # Sidebar filters
 st.sidebar.title("Filters")
-selected_grade = st.sidebar.selectbox("Select Grade Level", ["All"] + sorted(df["GradeLevel"].unique()))
+filter_mode = st.sidebar.radio("Filter by:", ["All", "Grade Level", "Select Names"])
 
-if selected_grade != "All":
-    df = df[df["GradeLevel"] == selected_grade]
+if filter_mode == "All":
+    filtered_df = df
 
-# Main section
-st.title("Rutherford Scholarship Dashboard")
-st.dataframe(df[["StudentName", "GradeLevel", "Scholarship Result"]])
+elif filter_mode == "Grade Level":
+    grade_choice = st.sidebar.selectbox("Choose Grade:", sorted(df["GradeLevel"].unique()))
+    filtered_df = df[df["GradeLevel"] == grade_choice]
 
-# Charts
-st.subheader("Scholarship Summary by Result")
-result_counts = df["Scholarship Result"].value_counts()
-st.bar_chart(result_counts)
+elif filter_mode == "Select Names":
+    names_selected = st.sidebar.multiselect("Select Student(s):", sorted(df["StudentName"].unique()))
+    filtered_df = df[df["StudentName"].isin(names_selected)] if names_selected else pd.DataFrame()
 
-st.subheader("Student Count by Grade")
-grade_counts = df["GradeLevel"].value_counts().sort_index()
-st.bar_chart(grade_counts)
+# Show results only if filtered_df has content
+if not filtered_df.empty:
+    st.subheader("🎓 Scholarship Eligibility Results")
+    st.dataframe(filtered_df[["StudentName", "GradeLevel", "Scholarship Result"]])
+
+    st.subheader("📊 Summary Charts")
+    result_counts = filtered_df["Scholarship Result"].value_counts()
+    st.bar_chart(result_counts)
+
+    grade_counts = filtered_df["GradeLevel"].value_counts().sort_index()
+    st.bar_chart(grade_counts)
 
 conn.close()
